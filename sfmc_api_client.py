@@ -1,6 +1,7 @@
 import requests
 from time import time
 import os
+import json
 import xml.etree.ElementTree as ET
 from dotenv import load_dotenv
 from typing import Optional, Dict
@@ -9,7 +10,7 @@ from typing import Optional, Dict
 load_dotenv()
 
 class SFMCAPIClient:
-  def __init__(self):
+  def __init__(self, account_name: str = "Transactional"):
     """
     Initializes the Salesforce Marketing Cloud API client with credentials and endpoint URLs.
 
@@ -18,25 +19,37 @@ class SFMCAPIClient:
     the access token and token expiration time as `None`, as they are obtained after 
     authentication.
 
+    Arguments:
+      - account_name (str, optional): The name of the SFMC mid, defaults to 'Transactional'.
+        Valid options are 'Transactional', 'Customer Retention', and 'Safeco'.
+
     Attributes:
-      - `self._client_id`: The client ID for the Salesforce Marketing Cloud account.
-      - `self._client_secret`: The client secret for the Salesforce Marketing Cloud account.
-      - `self._account_id`: The account ID (MID) for the Salesforce Marketing Cloud account.
-      - `self._auth_endpoint`: The endpoint for the authentication API.
-      - `self._rest_endpoint`: The endpoint for the REST API.
-      - `self._soap_endpoint`: The endpoint for the SOAP API.
-      - `self._access_token`: Initially set to `None`, will store the access token after authentication.
-      - `self._token_expiration`: Initially set to `None`, will store the expiration time of the access token.
+      - _client_id: The client ID for the Salesforce Marketing Cloud account.
+      - _client_secret: The client secret for the Salesforce Marketing Cloud account.
+      - _account_id: The account ID (MID) for the Salesforce Marketing Cloud account.
+      - _auth_endpoint: The endpoint for the authentication API.
+      - _rest_endpoint: The endpoint for the REST API.
+      - _soap_endpoint: The endpoint for the SOAP API.
+      - _access_token: Initially set to None, will store the access token after authentication.
+      - _token_expiration: Initially set to None, will store the expiration time of the access token.
+      - _http_success: Successful HTTP response statis codes.
+    
+    Raises:
+      - ValueError: If an invalid account_name is provided or it's not configured propertly in the environment variables.
     """
     self._client_id = os.environ.get("client_id")
     self._client_secret = os.environ.get("client_secret")
-    self._account_id = os.environ.get("account_id")
+    self._account_id = json.loads(os.environ.get("account_ids", "{}")).get(account_name)
     self._auth_endpoint = os.environ.get("auth_endpoint")
     self._rest_endpoint = os.environ.get("rest_endpoint")
     self._soap_endpoint = os.environ.get("soap_endpoint")
     self._access_token = None
     self._token_expiration = None
+    self._http_success = [200, 201, 202]
 
+    if not self._account_id:
+      raise ValueError(f"Account name '{account_name}' is not a valid account or is not configured properly in the environment variables.")
+        
   def authenticate(self) -> None:
     """
     Authenticates the user using the OAuth client credentials flow to obtain a Bearer token.
@@ -46,8 +59,8 @@ class SFMCAPIClient:
     The method stores the access token and the token expiration time (60 seconds before actual expiration).
 
     Updates:
-      - Sets `self._access_token` with the obtained Bearer token.
-      - Sets `self._token_expiration` with the expiration time of the token.
+      - Sets _access_token with the obtained Bearer token.
+      - Sets _token_expiration with the expiration time of the token.
 
     Returns:
       - None
@@ -63,10 +76,10 @@ class SFMCAPIClient:
     }
     response = requests.post(self._auth_endpoint, data=auth_data)
     
-    if response.status_code == 200:
+    if response.status_code in self._http_success:
       self._access_token = response.json().get('access_token')
       self._token_expiration = time() + response.json().get('expires_in') - 60  # Set expiration 60s before actual expiration
-      print("Authenticated successfully. Token will expire in", response.json().get('expires_in'), "seconds.")
+      print("Authenticated successfully. Token will expire in", round(response.json().get('expires_in') / 60), "minutes.")
     else:
       raise Exception("Authentication failed: " + response.text)
 
@@ -82,7 +95,7 @@ class SFMCAPIClient:
       - None
 
     Returns:
-      - bool: `True` if the access token is either missing or has expired, otherwise `False`.
+      - bool: True if the access token is either missing or has expired, otherwise False.
     """
     return self._access_token is None or time() >= self._token_expiration
 
@@ -119,7 +132,7 @@ class SFMCAPIClient:
     url = f'{self._rest_endpoint}/{endpoint}'
     response = requests.request(method, url, headers=headers, json=data)
     
-    if response.status_code in [200, 201]:
+    if response.status_code in self._http_success:
       return response.json()
     else:
       raise Exception(f'REST API request failed: {response.text}')
@@ -153,7 +166,7 @@ class SFMCAPIClient:
     }
     response = requests.post(self._soap_endpoint, headers=headers, data=body)
     
-    if response.status_code == 200:
+    if response.status_code in self._http_success:
       return ET.fromstring(response.content)
     else:
       raise Exception(f'SOAP API request failed: {response.text}')
