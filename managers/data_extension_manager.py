@@ -17,23 +17,19 @@ class DataExtensionManager(BaseManager):
       - dict: A dictionary representation of the Data Extension's properties.
     """
     body = f"""
-      <Body xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <RetrieveRequestMsg xmlns="http://exacttarget.com/wsdl/partnerAPI">
-          <RetrieveRequest>
-            <ObjectType>DataExtension</ObjectType>
-            <Properties>ObjectID</Properties>
-            <Properties>CustomerKey</Properties>
-            <Properties>Name</Properties>
-            <Properties>IsSendable</Properties>
-            <Properties>SendableSubscriberField.Name</Properties>
-            <Filter xsi:type="SimpleFilterPart">
-            <Property>CustomerKey</Property>
-            <SimpleOperator>equals</SimpleOperator>
-            <Value>{de_key}</Value>
-            </Filter>
-          </RetrieveRequest>
-        </RetrieveRequestMsg>
-      </Body>
+      <RetrieveRequest>
+        <ObjectType>DataExtension</ObjectType>
+        <Properties>ObjectID</Properties>
+        <Properties>CustomerKey</Properties>
+        <Properties>Name</Properties>
+        <Properties>IsSendable</Properties>
+        <Properties>SendableSubscriberField.Name</Properties>
+        <Filter xsi:type="SimpleFilterPart">
+        <Property>CustomerKey</Property>
+        <SimpleOperator>equals</SimpleOperator>
+        <Value>{de_key}</Value>
+        </Filter>
+      </RetrieveRequest>
     """
     response_xml = self._sfmc_client.make_soap_request("Retrieve", body)
     result = {

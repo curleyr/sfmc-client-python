@@ -160,11 +160,21 @@ class SFMCAPIClient:
       self.authenticate()
 
     headers = {
-      'Authorization': f'Bearer {self._access_token}',
       'Content-Type': 'text/xml',
       'SOAPAction': action
     }
-    response = requests.post(self._soap_endpoint, headers=headers, data=body)
+    envelope = f"""
+      <?xml version="1.0" encoding="UTF-8"?>
+      <s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+        <s:Header>
+          <fueloauth>{self._access_token}</fueloauth>
+        </s:Header>
+        <s:Body xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+          {body}
+        </s:Body>
+      </s:Envelope>
+    """
+    response = requests.post(self._soap_endpoint, headers=headers, data=envelope)
     
     if response.status_code in self._http_success:
       return ET.fromstring(response.content)
