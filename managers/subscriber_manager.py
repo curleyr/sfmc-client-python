@@ -17,24 +17,20 @@ class SubscriberManager(BaseManager):
       - dict: A dictionary representation of the Subscriber's properties.
     """
     body = f"""
-      <s:Body xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-        <RetrieveRequestMsg xmlns="http://exacttarget.com/wsdl/partnerAPI">
-          <RetrieveRequest>
-            <ObjectType>Subscriber</ObjectType>
-            <Properties>ID</Properties>
-            <Properties>CreatedDate</Properties>
-            <Properties>EmailAddress</Properties>
-            <Properties>SubscriberKey</Properties>
-            <Properties>UnsubscribedDate</Properties>
-            <Properties>Status</Properties>
-            <Filter xmlns:q1="http://exacttarget.com/wsdl/partnerAPI" xsi:type="q1:SimpleFilterPart">
-              <q1:Property>SubscriberKey</q1:Property>
-              <q1:SimpleOperator>equals</q1:SimpleOperator>
-              <q1:Value>{subscriber_key}</q1:Value>
-            </Filter>
-          </RetrieveRequest>
-        </RetrieveRequestMsg>
-      </s:Body>
+      <RetrieveRequest>
+        <ObjectType>Subscriber</ObjectType>
+        <Properties>ID</Properties>
+        <Properties>CreatedDate</Properties>
+        <Properties>EmailAddress</Properties>
+        <Properties>SubscriberKey</Properties>
+        <Properties>UnsubscribedDate</Properties>
+        <Properties>Status</Properties>
+        <Filter xmlns:q1="http://exacttarget.com/wsdl/partnerAPI" xsi:type="q1:SimpleFilterPart">
+          <q1:Property>SubscriberKey</q1:Property>
+          <q1:SimpleOperator>equals</q1:SimpleOperator>
+          <q1:Value>{subscriber_key}</q1:Value>
+        </Filter>
+      </RetrieveRequest>
     """
     response_xml = self._sfmc_client.make_soap_request("Retrieve", body = body)
     result = {
