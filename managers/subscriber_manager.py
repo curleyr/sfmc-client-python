@@ -1,16 +1,7 @@
+from base_manager import BaseManager
 from typing import Any, Dict, Optional
 
-class SubscriberManager:
-  def __init__(self, sfmc_client):
-    """
-    Initializes the SubscriberManager instance, which provides methods to interact
-    with Salesforce Marketing Cloud's subscribers.
-
-    Arguments:
-      - sfmc_client (SFMCAPIClient): The SFMC API client that manages the connection
-        and execution of requests.
-    """
-    self._sfmc_client = sfmc_client
+class SubscriberManager(BaseManager):
   
   def get_by_key(self, subscriber_key: str) -> dict:
     """
