@@ -1,7 +1,8 @@
-from sfmc_api_client import SFMCAPIClient
-from object_managers.data_extension_manager import DataExtensionManager
-from object_managers.automation_manager import AutomationManager
-from object_managers.query_manager import QueryManager
+from core.sfmc_api_client import SFMCAPIClient
+from managers.data_extension_manager import DataExtensionManager
+from managers.automation_manager import AutomationManager
+from managers.query_manager import QueryManager
+from managers.subscriber_manager import SubscriberManager
 
 class RequestsHandler:
   """
@@ -17,6 +18,7 @@ class RequestsHandler:
     - _data_extension (DataExtensionManager): Manages interactions with Data Extensions.
     - _automation (AutomationManager): Manages interactions with Automations.
     - _query (QueryManager): Manages interactions with Queries.
+    - _subscriber (SubscriberManager): Manages interactions with Subscribers.
   """
       
   def __init__(self, sfmc_client: SFMCAPIClient):
@@ -30,3 +32,4 @@ class RequestsHandler:
     self._data_extension = DataExtensionManager(self._sfmc_client)
     self._automation = AutomationManager(self._sfmc_client)
     self._query = QueryManager(self._sfmc_client)
+    self._subscriber = SubscriberManager(self._sfmc_client)

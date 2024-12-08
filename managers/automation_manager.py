@@ -3,7 +3,7 @@ class AutomationManager:
     """
     TODO
     """
-    self._sfmc_client: sfmc_client
+    self._sfmc_client = sfmc_client
 
   def get(self):
     print("got automation")
