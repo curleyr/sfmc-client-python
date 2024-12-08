@@ -1,9 +1,7 @@
-class AutomationManager:
-  def __init__(self, sfmc_client):
-    """
-    TODO
-    """
-    self._sfmc_client = sfmc_client
+from base_manager import BaseManager
+from typing import Any, Dict, Optional
+
+class AutomationManager(BaseManager):
 
   def get(self):
     print("got automation")

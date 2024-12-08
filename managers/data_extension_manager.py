@@ -1,17 +1,8 @@
+from base_manager import BaseManager
 from typing import Any, Dict, Optional
 
-class DataExtensionManager:
-  def __init__(self, sfmc_client):
-    """
-    Initializes the DataExtensionManager instance, which provides methods to interact
-    with Salesforce Marketing Cloud's data extensions.
-
-    Arguments:
-      - sfmc_client (SFMCAPIClient): The SFMC API client that manages the connection
-        and execution of requests.
-    """
-    self._sfmc_client = sfmc_client
-  
+class DataExtensionManager(BaseManager):
+    
   def get_by_key(self, de_key: str) -> dict:
     """
     Retrieves a Data Extension object by its CustomerKey.

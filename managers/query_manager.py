@@ -1,9 +1,7 @@
-class QueryManager:
-  def __init__(self, sfmc_client):
-    """
-    TODO
-    """
-    self._sfmc_client = sfmc_client
+from base_manager import BaseManager
+from typing import Any, Dict, Optional
+
+class QueryManager(BaseManager):
 
   def get(self):
     print("got query")
