@@ -40,7 +40,7 @@ You can initialize the client in two ways:
 1. Passing parameters directly to the constructor
 
 ```python
-from sfmc_api_client import SFMCAPIClient
+from core.sfmc_api_client import SFMCAPIClient
 
 client = SFMCAPIClient(
     client_id="your_client_id",
@@ -54,7 +54,7 @@ client = SFMCAPIClient(
    Make sure the required environment variables are set, then simply:
 
 ```python
-from sfmc_api_client import SFMCAPIClient
+from core.sfmc_api_client import SFMCAPIClient
 
 client = SFMCAPIClient()
 ```
