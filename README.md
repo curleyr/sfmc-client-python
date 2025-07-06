@@ -1,4 +1,5 @@
-# Overview
+# sfmc-client-python
+## Overview
 
 This Python client library provides a synchronous, easy-to-use interface to interact with Salesforce Marketing Cloud (SFMC) APIs, including REST and SOAP endpoints.
 
@@ -13,7 +14,7 @@ Install via cloning the repo or copying the module files into your project, or i
 pip install -e .
 ```
 
-# Configuration
+## Configuration
 
 You can configure the client by passing parameters directly to the constructor or by setting environment variables.
 
@@ -31,9 +32,9 @@ Note: SFMC_ACCOUNT_IDS environment variable should be a JSON string mapping acco
 SFMC_ACCOUNT_IDS={"AccountName1": "123456789", "AccountName2": "987654321"}
 ```
 
-# Usage
+## Usage
 
-## Initializing Client
+### Initializing Client
 
 You can initialize the client in two ways:
 
@@ -59,7 +60,7 @@ from core.sfmc_api_client import SFMCAPIClient
 client = SFMCAPIClient()
 ```
 
-## Working with Managers
+### Working with Managers
 
 Managers provide high-level interfaces to common SFMC objects.
 
@@ -91,7 +92,7 @@ print(subscriber)
 
 Note: All current methods are synchronous. Managers are a work in progress and may have limited features.
 
-## Authentication
+### Authentication
 
 The client automatically handles OAuth 2.0 client credentials authentication and token refresh.
 
@@ -101,19 +102,19 @@ If needed, you can manually force authentication:
 client.authenticate()
 ```
 
-## Error Handling
+### Error Handling
 
 Methods may raise exceptions such as:
 
 - AuthenticationError — When authentication fails.
 - RequestError — When API requests fail or return errors.
 
-## Future Plans
+### Future Plans
 
 - Asynchronous support for non-blocking requests.
 - Expanded managers and features for additional SFMC objects.
 - Better error handling and logging options.
 
-## License
+### License
 
 This project is licensed under the MIT License.
