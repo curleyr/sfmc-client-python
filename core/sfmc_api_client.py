@@ -1,182 +1,294 @@
+# --- sfmc_api_client.py ---
 import requests
 from time import time
 import os
 import json
+import threading
 import xml.etree.ElementTree as ET
-from dotenv import load_dotenv
-from typing import Optional, Dict
+from typing import Optional, Dict, Any, Callable, MutableMapping
+from exceptions import AuthenticationError, RequestError
 
-# Load environment variables from the .env file
+from dotenv import load_dotenv
 load_dotenv()
 
+
 class SFMCAPIClient:
-  def __init__(self, account_name: str = "Transactional"):
-    """
-    Initializes the Salesforce Marketing Cloud API client with credentials and endpoint URLs.
+    def __init__(
+        self,
+        account_name: Optional[str] = None,
+        client_id: Optional[str] = None,
+        client_secret: Optional[str] = None,
+        account_id: Optional[str] = None,
+        tenant_subdomain: Optional[str] = None,
+        http_client: Optional[Callable[..., Any]] = None,
+        environment: Optional[MutableMapping[str, str]] = None,
+        http_success_codes: Optional[list[int]] = None
+    ):
+        """
+        Initialize the Salesforce Marketing Cloud API client.
 
-    This method retrieves the client ID, client secret, account ID, and endpoint URLs
-    (authentication, SOAP, and REST) from environment variables. It also initializes 
-    the access token and token expiration time as `None`, as they are obtained after 
-    authentication.
+        Loads credentials and endpoint URLs from environment variables if not provided.
+        Initializes authentication token storage and thread lock for token refresh.
 
-    Arguments:
-      - account_name (str, optional): The name of the SFMC mid, defaults to 'Transactional'.
-        Valid options are 'Transactional', 'Customer Retention', and 'Safeco'.
+        :param account_name: Logical account name used to select account ID. If None, defaults to the first key in the `SFMC_ACCOUNT_IDS` env var JSON.
+        :param client_id: OAuth client ID. Defaults to environment variable `SFMC_CLIENT_ID`.
+        :param client_secret: OAuth client secret. Defaults to environment variable `SFMC_CLIENT_SECRET`.
+        :param account_id: Specific account ID (MID). Overrides `account_name`.
+        :param tenant_subdomain: Assigned tenant specific subdomain. Used in API endpoint URLs. Defaults to env `SFMC_TENANT_SUBDOMAIN`.
+        :param http_client: HTTP client function, defaults to `requests.request`.
+        :param http_success_codes: HTTP status codes considered successful. Defaults to [200, 201, 202].
 
-    Attributes:
-      - _client_id: The client ID for the Salesforce Marketing Cloud account.
-      - _client_secret: The client secret for the Salesforce Marketing Cloud account.
-      - _account_id: The account ID (MID) for the Salesforce Marketing Cloud account.
-      - _auth_endpoint: The endpoint for the authentication API.
-      - _rest_endpoint: The endpoint for the REST API.
-      - _soap_endpoint: The endpoint for the SOAP API.
-      - _access_token: Initially set to None, will store the access token after authentication.
-      - _token_expiration: Initially set to None, will store the expiration time of the access token.
-      - _http_success: Successful HTTP response statis codes.
-    
-    Raises:
-      - ValueError: If an invalid account_name is provided or it's not configured propertly in the environment variables.
-    """
-    self._client_id = os.environ.get("client_id")
-    self._client_secret = os.environ.get("client_secret")
-    self._account_id = json.loads(os.environ.get("account_ids", "{}")).get(account_name)
-    self._auth_endpoint = os.environ.get("auth_endpoint")
-    self._rest_endpoint = os.environ.get("rest_endpoint")
-    self._soap_endpoint = os.environ.get("soap_endpoint")
-    self._access_token = None
-    self._token_expiration = None
-    self._http_success = [200, 201, 202]
+        :raises ValueError: If account_name is invalid or missing in environment configuration.
+        """
 
-    if not self._account_id:
-      raise ValueError(f"Account name '{account_name}' is not a valid account or is not configured properly in the environment variables.")
+        environment = environment or os.environ
+
+        self.client_id = client_id or environment.get("SFMC_CLIENT_ID")
+        """ :type : str """
+        self.client_secret = client_secret or environment.get("SFMC_CLIENT_SECRET")
+        """ :type : str """
+
+        account_ids = json.loads(environment.get("SFMC_ACCOUNT_IDS", "{}"))
+        if not account_name:
+            # Default to first key if available
+            account_name = next(iter(account_ids), None)
+        self.account_id = account_id or account_ids.get(account_name)
+        """ :type : str """
         
-  def authenticate(self) -> None:
-    """
-    Authenticates the user using the OAuth client credentials flow to obtain a Bearer token.
+        self.tenant_subdomain = tenant_subdomain or environment.get("SFMC_TENANT_SUBDOMAIN")
+        """ :type : str """
+        self.access_token = None
+        """ :type : str """
+        self.token_expiration = None
+        """ :type : Optional[float] """
+        self.http_client = http_client or requests.request
+        """ :type : HttpClient """
+        self.http_success_codes = http_success_codes or [200, 201, 202]
+        """ :type : list[int] """
+        self.auth_lock: threading.Lock = threading.Lock()
+        """ :type : threading.Lock """
 
-    This method sends a POST request to the authentication endpoint with the client 
-    credentials (client_id, client_secret, and account_id) to retrieve an access token. 
-    The method stores the access token and the token expiration time (60 seconds before actual expiration).
+        if not self.account_id:
+            raise ValueError(f"Account name '{account_name}' is not a valid account or is not configured properly in the environment.")
+        
+        # Managers lazy init
+        self._data_extensions = None
+        self._automations = None
+        self._queries = None
+        self._subscribers = None
 
-    Updates:
-      - Sets _access_token with the obtained Bearer token.
-      - Sets _token_expiration with the expiration time of the token.
+        
+    def authenticate(self) -> None:
+        """
+        Authenticate with Salesforce Marketing Cloud using OAuth client credentials flow.
 
-    Returns:
-      - None
+        Obtains a Bearer token by POSTing client credentials to the authentication endpoint.
+        Stores the access token and expiration time (with a 60-second buffer).
+
+        :raises AuthenticationError: If the authentication request fails or token info is missing.
+        """
+
+        with self.auth_lock:
+            if not self.is_token_expired():
+                return
+      
+        auth_data = {
+            "grant_type": "client_credentials",
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "account_id": self.account_id
+        }
+        response = requests.post(f"https://{self.tenant_subdomain}.auth.marketingcloudapis.com", data=auth_data)
+        if response.status_code not in self.http_success_codes:
+            raise AuthenticationError("Authentication failed: " + response.text)
+
+        self.access_token = response.json().get("access_token")
+        self.token_expiration = time() + response.json().get("expires_in") - 60  # Set expiration 60s before actual expiration
+        
+        if not self.access_token or not self.token_expiration:
+            raise AuthenticationError("Access token or expiration missing in auth response.")
+
+
+    def is_token_expired(self) -> bool:
+        """
+        Check if the current OAuth token is missing or expired.
+
+        :return: True if no valid token exists or token has expired, else False.
+        :rtype: bool
+        """
+
+        return not self.access_token or time() >= (self.token_expiration or 0)
+
+
+    def make_rest_request(
+        self, 
+        endpoint: str, 
+        method: Optional[str] = "GET", 
+        data: Optional[Dict] = None
+    ) -> Optional[Dict]:
+        """
+        Make a REST API request to the Salesforce Marketing Cloud endpoint.
+
+        Automatically authenticates if the token is expired.
+
+        :param endpoint: REST API endpoint path (appended to base URL).
+        :param method: HTTP method to use (GET, POST, PUT, DELETE). Defaults to "GET".
+        :param data: JSON body for POST/PUT requests. Defaults to None.
+
+        :return: JSON-decoded response body.
+        :rtype: dict
+
+        :raises ValueError: If an unsupported HTTP method is provided.
+        :raises RequestError: If the HTTP response is unsuccessful.
+        """
+
+        if method not in ["GET", "POST", "PUT", "DELETE"]:
+            raise ValueError(f"Unsupported HTTP method: {method}")
+      
+        # Check if have valid token before making REST call
+        if self.is_token_expired():
+            self.authenticate()
+
+        headers = {
+            "Authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json"
+        }
+        url = f"https://{self.tenant_subdomain}.rest.marketingcloudapis.com/{endpoint}"
+        response = self.http_client(method, url, headers=headers, json=data)
+      
+        if response.status_code not in self.http_success_codes:
+            raise RequestError(f"REST API Error {response.status_code}: {response.text}")
+        
+        return response.json()
+        
+
+    def make_soap_request(
+        self, action: str, 
+        body: str
+    ) -> ET.Element:
+        """
+        Send a SOAP API request to Salesforce Marketing Cloud.
+
+        Automatically authenticates if the token is expired.
+
+        :param action: SOAPAction header specifying the operation.
+        :param body: XML body content of the SOAP request.
+
+        :return: Parsed XML element of the SOAP response.
+        :rtype: xml.etree.ElementTree.Element
+
+        :raises RequestError: If the SOAP request fails or response cannot be parsed.
+        """
+
+        # Check if have valid token before making SOAP call
+        if self.is_token_expired():
+            self.authenticate()
+
+        headers = {
+            "Content-Type": "text/xml",
+            "SOAPAction": action
+        }
+
+        envelope = "\n".join([
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">',
+            '   <s:Header>',
+            f'      <fueloauth>{self.access_token}</fueloauth>',
+            '   </s:Header>',
+            '   <s:Body xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">',
+            f'      {body}',
+            '   </s:Body>',
+            '</s:Envelope>'
+        ])
+
+        response = self.http_client(
+            method="POST",
+            url=f"https://{self.tenant_subdomain}.soap.marketingcloudapis.com",
+            headers=headers,
+            data=envelope
+        )
+      
+        if response.status_code not in self.http_success_codes:
+            raise RequestError(f"SOAP API Error {response.status_code}: {response.text}")
+      
+        try:
+            return ET.fromstring(response.content)
+        except ET.ParseError as e:
+            raise RequestError(f"Failed to parse SOAP response: {e}") from e
+
+
+    def __repr__(self) -> str:
+        """
+        Provide a friendly representation
+
+        :returns: String with identifying details
+        """
+        return f"<SFMC API {self.account_id}>"
     
-    Raises:
-      - Exception: If authentication fails or the response is not successful.
-    """
-    auth_data = {
-      'grant_type': 'client_credentials',
-      'client_id': self._client_id,
-      'client_secret': self._client_secret,
-      'account_id': self._account_id
-    }
-    response = requests.post(self._auth_endpoint, data=auth_data)
-    
-    if response.status_code in self._http_success:
-      self._access_token = response.json().get('access_token')
-      self._token_expiration = time() + response.json().get('expires_in') - 60  # Set expiration 60s before actual expiration
-      print("Authenticated successfully. Token will expire in", round(response.json().get('expires_in') / 60), "minutes.")
-    else:
-      raise Exception("Authentication failed: " + response.text)
 
-  def is_token_expired(self) -> bool:
-    """
-    Checks whether the Bearer token is missing or has expired.
+    # Object managers as lazy-loaded properties
+    #
+    # These properties provide access to high-level abstractions for interacting with
+    # specific Salesforce Marketing Cloud objects (e.g., Data Extensions, Automations).
+    #
+    # They are implemented as lazy-loaded properties, meaning their corresponding manager
+    # classes are only instantiated when first accessed, not during client initialization.
+    #
+    # This approach has several benefits:
+    # - Improves performance by avoiding unnecessary imports and object creation unless needed.
+    # - Reduces startup time and memory usage, especially if the client only interacts with a subset of SFMC objects.
+    # - Avoids circular import issues by deferring imports to runtime within the property body.
+    #
+    # Accessing one of these properties (e.g., `client.data_extensions`) will dynamically load
+    # and cache the associated manager for subsequent calls.
 
-    This method verifies if the access token is present and whether it has 
-    expired based on the stored expiration time. If no token exists or the 
-    token has expired, it returns `True`, otherwise `False`.
+    @property
+    def data_extensions(self):
+        """
+        Lazy-load and return the DataExtensionManager instance.
 
-    Arguments: 
-      - None
+        :return: Manager for data extension operations.
+        """
+        if self._data_extensions is None:
+            from managers.manager_data_extensions import DataExtensionManager
+            self._data_extensions = DataExtensionManager(self)
+        return self._data_extensions
 
-    Returns:
-      - bool: True if the access token is either missing or has expired, otherwise False.
-    """
-    return self._access_token is None or time() >= self._token_expiration
 
-  def make_rest_request(self, endpoint: str, method: Optional[str] = 'GET', data: Optional[Dict] = None) -> Optional[Dict]:
-    """
-    Makes a REST request to the specified Salesforce Marketing Cloud REST API endpoint using the given HTTP method.
+    @property
+    def automations(self):
+        """
+        Lazy-load and return the AutomationManager instance.
 
-    This method handles GET, POST, PUT, and DELETE requests and ensures the access token 
-    is valid before making the request.
-    
-    Arguments:
-      - endpoint (str): The URL endpoint for the request.
-      - method (str, optional): The HTTP method to use (GET, POST, PUT, DELETE). Defaults to 'GET'.
-      - data (dict, optional): The body of the request, for POST/PUT requests. Defaults to None.
+        :return: Manager for automation operations.
+        """
+        if self._automations is None:
+            from managers.manager_automations import AutomationManager
+            self._automations = AutomationManager(self)
+        return self._automations
 
-   Returns:
-      - dict: The JSON response data from the REST API if the request is successful.
 
-    Raises:
-      - ValueError: If an unsupported HTTP method is provided.
-      - Exception: If the REST API request fails (non-200/201 status code) or returns an error response.
-    """
-    if method not in ['GET', 'POST', 'PUT', 'DELETE']:
-      raise ValueError(f"Unsupported HTTP method: {method}")
-    
-    # Check if have valid token before making REST call
-    if self.is_token_expired():
-      self.authenticate()
+    @property
+    def queries(self):
+        """
+        Lazy-load and return the QueryManager instance.
 
-    headers = {
-      'Authorization': f'Bearer {self._access_token}',
-      'Content-Type': 'application/json'
-    }
-    url = f'{self._rest_endpoint}/{endpoint}'
-    response = requests.request(method, url, headers=headers, json=data)
-    
-    if response.status_code in self._http_success:
-      return response.json()
-    else:
-      raise Exception(f'REST API request failed: {response.text}')
+        :return: Manager for query operations.
+        """
+        if self._queries is None:
+            from managers.manager_queries import QueryManager
+            self._queries = QueryManager(self)
+        return self._queries
 
-  def make_soap_request(self, action: str, body: str) -> ET.Element:
-    """
-    Sends a SOAP request to the Salesforce Marketing Cloud SOAP API.
 
-    This method sends a POST request to the SOAP endpoint with the specified SOAP action 
-    and request body. It ensures that a valid access token is used by checking the token's 
-    expiration before making the request.
+    @property
+    def subscribers(self):
+        """
+        Lazy-load and return the QueryManager instance.
 
-    Keyword arguments:
-      - action (str) -- The SOAPAction header value that specifies the operation to be invoked.
-      - body (str) -- The XML body of the SOAP request, containing the parameters for the operation.
-
-    Returns:
-      - ET.Element: The parsed XML response from the SOAP API, or raises an exception if the request fails.
-
-    Raises:
-      - Exception: If the SOAP request fails (non-200 status code) or if there is an issue parsing the response.
-    """
-    # Check if have valid token before making SOAP call
-    if self.is_token_expired():
-      self.authenticate()
-
-    headers = {
-      'Content-Type': 'text/xml',
-      'SOAPAction': action
-    }
-    envelope = f"""
-      <?xml version="1.0" encoding="UTF-8"?>
-      <s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
-        <s:Header>
-          <fueloauth>{self._access_token}</fueloauth>
-        </s:Header>
-        <s:Body xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-          {body}
-        </s:Body>
-      </s:Envelope>
-    """
-    response = requests.post(self._soap_endpoint, headers=headers, data=envelope)
-    
-    if response.status_code in self._http_success:
-      return ET.fromstring(response.content)
-    else:
-      raise Exception(f'SOAP API request failed: {response.text}')
+        :return: Manager for query operations.
+        """
+        if self._subscribers is None:
+            from managers.manager_subscribers import SubscriberManager
+            self._subscribers = SubscriberManager(self)
+        return self._subscribers

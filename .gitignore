@@ -1,5 +1,6 @@
 __pycache__
-.*
-!.gitignore
 .env
-venv
+.venv
+.vscode
+.DS_Store
+core/transports
