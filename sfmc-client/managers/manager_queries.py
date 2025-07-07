@@ -1,5 +1,5 @@
 # --- manager_queries.py ---
-from managers.manager_base import BaseManager
+from manager_base import BaseManager
 from typing import Any, Dict, Optional, List
 
 

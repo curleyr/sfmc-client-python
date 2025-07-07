@@ -1,5 +1,39 @@
-# sfmc-client-python
-## Overview
+Metadata-Version: 2.4
+Name: sfmc-client
+Version: 0.1.0
+Summary: SFMC API client and object manager
+Home-page: https://github.com/curleyr/sfmc-client-python
+Author: Robert (Bobby) Curley
+Author-email: "Robert (Bobby) Curley" <bcurley.dev@gmail.com>
+License-Expression: MIT
+Project-URL: Homepage, https://github.com/curleyr/sfmc-client-python
+Project-URL: Repository, https://github.com/curleyr/sfmc-client-python
+Project-URL: Issues, https://github.com/curleyr/sfmc-client-python/issues
+Requires-Python: >=3.10.5
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: aiohappyeyeballs<3.0.0,>=2.6.1
+Requires-Dist: aiohttp<4.0.0,>=3.12.13
+Requires-Dist: aiosignal<2.0.0,>=1.4.0
+Requires-Dist: async-timeout<6.0.0,>=5.0.1
+Requires-Dist: attrs<26.0.0,>=25.3.0
+Requires-Dist: certifi<2025.0.0,>=2024.8.30
+Requires-Dist: charset-normalizer<4.0.0,>=3.4.0
+Requires-Dist: frozenlist<2.0.0,>=1.7.0
+Requires-Dist: idna<4.0.0,>=3.10
+Requires-Dist: multidict<7.0.0,>=6.6.3
+Requires-Dist: propcache<1.0.0,>=0.3.2
+Requires-Dist: python-dotenv<2.0.0,>=1.0.1
+Requires-Dist: requests<3.0.0,>=2.32.3
+Requires-Dist: typing_extensions<5.0.0,>=4.14.1
+Requires-Dist: urllib3<3.0.0,>=2.2.3
+Requires-Dist: yarl<2.0.0,>=1.20.1
+Dynamic: author
+Dynamic: home-page
+Dynamic: license-file
+Dynamic: requires-python
+
+# Overview
 
 This Python client library provides a synchronous, easy-to-use interface to interact with Salesforce Marketing Cloud (SFMC) APIs, including REST and SOAP endpoints.
 
@@ -8,13 +42,13 @@ It supports authentication via OAuth 2 client credentials and exposes high-level
 Async support is planned for future releases.
 
 Installation
-This project is currently hosted in the PyPI test environment. To install:
+Install via cloning the repo or copying the module files into your project, or install locally with:
 
 ```bash
-pip install -i https://test.pypi.org/simple/ sfmc-client
+pip install -e .
 ```
 
-## Configuration
+# Configuration
 
 You can configure the client by passing parameters directly to the constructor or by setting environment variables.
 
@@ -32,9 +66,9 @@ Note: SFMC_ACCOUNT_IDS environment variable should be a JSON string mapping acco
 SFMC_ACCOUNT_IDS={"AccountName1": "123456789", "AccountName2": "987654321"}
 ```
 
-## Usage
+# Usage
 
-### Initializing Client
+## Initializing Client
 
 You can initialize the client in two ways:
 
@@ -60,7 +94,7 @@ from core.sfmc_api_client import SFMCAPIClient
 client = SFMCAPIClient()
 ```
 
-### Working with Managers
+## Working with Managers
 
 Managers provide high-level interfaces to common SFMC objects.
 
@@ -92,7 +126,7 @@ print(subscriber)
 
 Note: All current methods are synchronous. Managers are a work in progress and may have limited features.
 
-### Authentication
+## Authentication
 
 The client automatically handles OAuth 2.0 client credentials authentication and token refresh.
 
@@ -102,19 +136,19 @@ If needed, you can manually force authentication:
 client.authenticate()
 ```
 
-### Error Handling
+## Error Handling
 
 Methods may raise exceptions such as:
 
 - AuthenticationError — When authentication fails.
 - RequestError — When API requests fail or return errors.
 
-### Future Plans
+## Future Plans
 
 - Asynchronous support for non-blocking requests.
 - Expanded managers and features for additional SFMC objects.
 - Better error handling and logging options.
 
-### License
+## License
 
 This project is licensed under the MIT License.
