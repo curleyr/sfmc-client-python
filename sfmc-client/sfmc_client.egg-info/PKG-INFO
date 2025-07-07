@@ -1,3 +1,38 @@
+Metadata-Version: 2.4
+Name: sfmc-client
+Version: 0.1.0
+Summary: SFMC API client and object manager
+Home-page: https://github.com/curleyr/sfmc-client-python
+Author: Robert (Bobby) Curley
+Author-email: "Robert (Bobby) Curley" <bcurley.dev@gmail.com>
+License-Expression: MIT
+Project-URL: Homepage, https://github.com/curleyr/sfmc-client-python
+Project-URL: Repository, https://github.com/curleyr/sfmc-client-python
+Project-URL: Issues, https://github.com/curleyr/sfmc-client-python/issues
+Requires-Python: >=3.10.5
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: aiohappyeyeballs<3.0.0,>=2.6.1
+Requires-Dist: aiohttp<4.0.0,>=3.12.13
+Requires-Dist: aiosignal<2.0.0,>=1.4.0
+Requires-Dist: async-timeout<6.0.0,>=5.0.1
+Requires-Dist: attrs<26.0.0,>=25.3.0
+Requires-Dist: certifi<2025.0.0,>=2024.8.30
+Requires-Dist: charset-normalizer<4.0.0,>=3.4.0
+Requires-Dist: frozenlist<2.0.0,>=1.7.0
+Requires-Dist: idna<4.0.0,>=3.10
+Requires-Dist: multidict<7.0.0,>=6.6.3
+Requires-Dist: propcache<1.0.0,>=0.3.2
+Requires-Dist: python-dotenv<2.0.0,>=1.0.1
+Requires-Dist: requests<3.0.0,>=2.32.3
+Requires-Dist: typing_extensions<5.0.0,>=4.14.1
+Requires-Dist: urllib3<3.0.0,>=2.2.3
+Requires-Dist: yarl<2.0.0,>=1.20.1
+Dynamic: author
+Dynamic: home-page
+Dynamic: license-file
+Dynamic: requires-python
+
 # Overview
 
 This Python client library provides a synchronous, easy-to-use interface to interact with Salesforce Marketing Cloud (SFMC) APIs, including REST and SOAP endpoints.
@@ -7,10 +42,10 @@ It supports authentication via OAuth 2 client credentials and exposes high-level
 Async support is planned for future releases.
 
 Installation
-This project is currently hosted in the PyPI test environment. To install:
+Install via cloning the repo or copying the module files into your project, or install locally with:
 
 ```bash
-pip install -i https://test.pypi.org/simple/ sfmc-client
+pip install -e .
 ```
 
 # Configuration
