@@ -7,7 +7,7 @@ It supports authentication via OAuth 2 client credentials and exposes high-level
 
 Async support is planned for future releases.
 
-# Installation
+## Installation
 This project is currently hosted in the PyPI test environment. To install:
 
 ```bash
