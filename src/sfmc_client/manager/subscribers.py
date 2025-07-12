@@ -1,6 +1,7 @@
-# --- manager_subscribers.py ---
-from manager_base import BaseManager
-from typing import Any, Dict, Optional, List
+# --- manager/subscribers.py ---
+from __future__ import annotations
+from src.sfmc_client.manager.base_manager import BaseManager
+from typing import Any, Dict
 
 
 class SubscriberManager(BaseManager):
