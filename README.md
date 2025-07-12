@@ -1,5 +1,8 @@
 # sfmc-client-python
 
+⚠️ Work in Progress
+This project is actively being developed and testing has been limited. Features and structure are subject to change.
+
 ## Overview
 
 This Python client library provides a synchronous, easy-to-use interface to interact with Salesforce Marketing Cloud (SFMC) APIs, including REST and SOAP endpoints.
