@@ -54,7 +54,6 @@ class SyncHTTPClient(BaseHTTPClient):
         :return: Parsed JSON response from the server.
         :raises RequestError: On non-2xx response.
         """
-        url = f"https://{self.config.tenant_subdomain}.auth.marketingcloudapis.com"
         response = requests.request(method, url, json=data)
         if not response.ok:
             raise RequestError(f"Auth request failed: {response.status_code} - {response.text}")
