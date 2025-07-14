@@ -32,7 +32,7 @@ class SubscriberManager(BaseManager):
             '   </RetrieveRequest>',
             '<RetrieveRequestMsg>'
         ])
-        response_xml = self._sfmc_client.make_soap_request("Retrieve", body = body)
+        response_xml = self.client.make_soap_request("Retrieve", body = body)
         results = response_xml.find(".//s:Body/default:RetrieveResponseMsg/default:Results", namespace=self.soap_xml_namespaces)
 
         if results is None:
