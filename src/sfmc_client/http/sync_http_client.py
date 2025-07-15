@@ -100,7 +100,7 @@ class SyncHTTPClient(BaseHTTPClient):
         :return: Parsed ElementTree XML response.
         :raises RequestError: On non-2xx response or XML parsing failure.
         """
-        url = f"{self.config.tenant_subdomain}"
+        url = f"https://{self.config.tenant_subdomain}.soap.marketingcloudapis.com/Service.asmx"
         headers = {
             "Content-Type": "text/xml",
             "SOAPAction": action
