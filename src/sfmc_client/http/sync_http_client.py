@@ -48,13 +48,12 @@ class SyncHTTPClient(BaseHTTPClient):
         """
         Make a sync request to the SFMC auth endpoint.
 
-        :param method: HTTP method (typically "POST").
         :param url: Full URL to auth endpoint.
         :param data: JSON payload to send.
         :return: Parsed JSON response from the server.
         :raises RequestError: On non-2xx response.
         """
-        response = requests.request(method, url, json=data)
+        response = requests.post(url, json=data)
         if not response.ok:
             raise RequestError(f"Auth request failed: {response.status_code} - {response.text}")
 
@@ -75,7 +74,7 @@ class SyncHTTPClient(BaseHTTPClient):
         :return: Parsed JSON response.
         :raises RequestError: On non-2xx response.
         """
-        url = f"{self.config.tenant_subdomain}/{endpoint.lstrip('/')}"
+        url = f"https://{self.config.tenant_subdomain}.rest.marketingcloudapis.com/{endpoint}"
         headers = {
             "Authorization": f"Bearer {self.auth_manager.get_token()}",
             "Content-Type": "application/json"

@@ -107,7 +107,7 @@ class AuthManager:
                 "client_secret": self.config.client_secret,
                 "account_id": self.config.account_id
             }
-            response = self.http_client.auth_request("POST", url, data=payload)
+            response = self.http_client.auth_request(url, data=payload)
             self.access_token = response.get("access_token")
             self.token_expiration = time() + response.get("expires_in") - 60  # Set expiration 60s before actual expiration
             
