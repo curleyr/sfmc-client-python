@@ -4,7 +4,7 @@ import requests
 import xml.etree.ElementTree as ET
 from typing import Optional, Dict, Any
 from src.sfmc_client.http.base_http_client import BaseHTTPClient
-from src.sfmc_client.core.exceptions import RequestError
+from src.sfmc_client.core.exceptions import RequestError, AuthenticationError
 
 from src.sfmc_client.core.config import Config
 from src.sfmc_client.auth.auth_manager import AuthManager
@@ -51,11 +51,11 @@ class SyncHTTPClient(BaseHTTPClient):
         :param url: Full URL to auth endpoint.
         :param data: JSON payload to send.
         :return: Parsed JSON response from the server.
-        :raises RequestError: On non-2xx response.
+        :raises AuthenticationError: On non-2xx response.
         """
         response = requests.post(url, json=data)
         if not response.ok:
-            raise RequestError(f"Auth request failed: {response.status_code} - {response.text}")
+            raise AuthenticationError(f"Auth request failed: {response.status_code} - {response.text}")
 
         return response.json()
 
