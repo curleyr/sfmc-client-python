@@ -24,16 +24,16 @@ class SubscriberManager(BaseManager):
             '       <Properties>SubscriberKey</Properties>',
             '       <Properties>UnsubscribedDate</Properties>',
             '       <Properties>Status</Properties>',
-            '       <Filter xmlns:q1="http://exacttarget.com/wsdl/partnerAPI" xsi:type="q1:SimpleFilterPart">',
-            '           <q1:Property>SubscriberKey</q1:Property>',
-            '           <q1:SimpleOperator>equals</q1:SimpleOperator>',
-            f'          <q1:Value>{subscriber_key}</q1:Value>',
+            '       <Filter xsi:type="SimpleFilterPart">',
+            '           <Property>SubscriberKey</Property>',
+            '           <SimpleOperator>equals</SimpleOperator>',
+            f'          <Value>{subscriber_key}</Value>',
             '       </Filter>',
             '   </RetrieveRequest>',
-            '<RetrieveRequestMsg>'
+            '</RetrieveRequestMsg>'
         ])
-        response_xml = self._sfmc_client.make_soap_request("Retrieve", body = body)
-        results = response_xml.find(".//s:Body/default:RetrieveResponseMsg/default:Results", namespace=self.soap_xml_namespaces)
+        response_xml = self.client.make_soap_request(action="Retrieve", body=body)
+        results = response_xml.find(".//s:Body/default:RetrieveResponseMsg/default:Results", namespaces=self.soap_xml_namespaces)
 
         if results is None:
             return None

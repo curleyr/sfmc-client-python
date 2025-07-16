@@ -54,7 +54,6 @@ class SyncHTTPClient(BaseHTTPClient):
         :return: Parsed JSON response from the server.
         :raises RequestError: On non-2xx response.
         """
-        url = f"https://{self.config.tenant_subdomain}.auth.marketingcloudapis.com"
         response = requests.request(method, url, json=data)
         if not response.ok:
             raise RequestError(f"Auth request failed: {response.status_code} - {response.text}")
@@ -101,24 +100,21 @@ class SyncHTTPClient(BaseHTTPClient):
         :return: Parsed ElementTree XML response.
         :raises RequestError: On non-2xx response or XML parsing failure.
         """
-        url = f"{self.config.tenant_subdomain}"
+        url = f"https://{self.config.tenant_subdomain}.soap.marketingcloudapis.com/Service.asmx"
         headers = {
-            "Content-Type": "text/xml",
+            "Content-Type": "application/soap+xml; charset=utf-8",
             "SOAPAction": action
         }
 
         envelope = "\n".join([
             '<?xml version="1.0" encoding="UTF-8"?>',
-            '<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" '
-            'xmlns:a="http://schemas.xmlsoap.org/ws/2004/08/addressing" '
-            'xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">',
-            '   <s:Header>',
-            f'      <fueloauth>{self.auth_manager.get_token()}</fueloauth>',
-            '   </s:Header>',
-            '   <s:Body xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '
-            'xmlns:xsd="http://www.w3.org/2001/XMLSchema">',
-            f'      {body}',
-            '   </s:Body>',
+            '<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">',
+            '    <s:Header>',
+            f'       <fueloauth>{self.auth_manager.get_token()}</fueloauth>',
+            '    </s:Header>',
+            '    <s:Body xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">',
+            f'       {body}',
+            '    </s:Body>',
             '</s:Envelope>'
         ])
 

@@ -16,23 +16,23 @@ class DataExtensionManager(BaseManager):
         """
         body = "\n".join([
             '<RetrieveRequestMsg xmlns="http://exacttarget.com/wsdl/partnerAPI">',
-            '   <RetrieveRequest>',
-            '       <ObjectType>DataExtension</ObjectType>',
-            '       <Properties>ObjectID</Properties>',
-            '       <Properties>CustomerKey</Properties>',
-            '       <Properties>Name</Properties>',
-            '       <Properties>IsSendable</Properties>',
-            '       <Properties>SendableSubscriberField.Name</Properties>',
-            '       <Filter xsi:type="SimpleFilterPart">',
-            '       <Property>CustomerKey</Property>',
-            '       <SimpleOperator>equals</SimpleOperator>',
-            f'      <Value>{de_key}</Value>',
-            '       </Filter>',
-            '   </RetrieveRequest>',
-            '<RetrieveRequestMsg>'
+            '    <RetrieveRequest>',
+            '        <ObjectType>DataExtension</ObjectType>',
+            '        <Properties>ObjectID</Properties>',
+            '        <Properties>CustomerKey</Properties>',
+            '        <Properties>Name</Properties>',
+            '        <Properties>IsSendable</Properties>',
+            '        <Properties>SendableSubscriberField.Name</Properties>',
+            '        <Filter xsi:type="SimpleFilterPart">',
+            '            <Property>CustomerKey</Property>',
+            '            <SimpleOperator>equals</SimpleOperator>',
+            f'           <Value>{de_key}</Value>',
+            '        </Filter>',
+            '    </RetrieveRequest>',
+            '</RetrieveRequestMsg>'
         ])
-        response_xml = self.client.make_soap_request("Retrieve", body)
-        results = response_xml.find(".//s:Body/default:RetrieveResponseMsg/default:Results", namespace=self.soap_xml_namespaces)
+        response_xml = self.client.make_soap_request(action="Retrieve", body=body)
+        results = response_xml.find(".//s:Body/default:RetrieveResponseMsg/default:Results", namespaces=self.soap_xml_namespaces)
         
         if results is None:
             return None
@@ -67,7 +67,7 @@ class DataExtensionManager(BaseManager):
         :return: Data Extension details or None if not found.
         """
         return self.client.make_rest_request(
-            endpoint = f"data/v1/customobjects/{de_id}"
+            endpoint=f"data/v1/customobjects/{de_id}"
         )
 
 
@@ -100,7 +100,7 @@ class DataExtensionManager(BaseManager):
         :return: API response containing the created object.
         """
         return self.client.make_rest_request(
-            endpoint = "data/v1/customobjects",
-            method = "POST",
-            data = de_data
+            endpoint="data/v1/customobjects",
+            method="POST",
+            data=de_data
         )

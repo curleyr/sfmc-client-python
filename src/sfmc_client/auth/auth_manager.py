@@ -108,11 +108,8 @@ class AuthManager:
                 "account_id": self.config.account_id
             }
             response = self.http_client.auth_request("POST", url, data=payload)
-            if response.status_code not in self.http_success_codes:
-                raise AuthenticationError(f"Auth failed: {response.status_code} {response.text}")
-
-            self.access_token = response.json().get("access_token")
-            self.token_expiration = time() + response.json().get("expires_in") - 60  # Set expiration 60s before actual expiration
+            self.access_token = response.get("access_token")
+            self.token_expiration = time() + response.get("expires_in") - 60  # Set expiration 60s before actual expiration
             
             if not self.access_token or not self.token_expiration:
                 raise AuthenticationError("Access token or expiration missing in auth response.")
