@@ -31,7 +31,7 @@ class DataExtensionManager(BaseManager):
             '    </RetrieveRequest>',
             '</RetrieveRequestMsg>'
         ])
-        response_xml = self.client.make_soap_request("Retrieve", body)
+        response_xml = self.client.make_soap_request(action="Retrieve", body=body)
         results = response_xml.find(".//s:Body/default:RetrieveResponseMsg/default:Results", namespaces=self.soap_xml_namespaces)
         
         if results is None:
@@ -67,7 +67,7 @@ class DataExtensionManager(BaseManager):
         :return: Data Extension details or None if not found.
         """
         return self.client.make_rest_request(
-            endpoint = f"data/v1/customobjects/{de_id}"
+            endpoint=f"data/v1/customobjects/{de_id}"
         )
 
 
@@ -100,7 +100,7 @@ class DataExtensionManager(BaseManager):
         :return: API response containing the created object.
         """
         return self.client.make_rest_request(
-            endpoint = "data/v1/customobjects",
-            method = "POST",
-            data = de_data
+            endpoint="data/v1/customobjects",
+            method="POST",
+            data=de_data
         )
