@@ -16,23 +16,23 @@ class DataExtensionManager(BaseManager):
         """
         body = "\n".join([
             '<RetrieveRequestMsg xmlns="http://exacttarget.com/wsdl/partnerAPI">',
-            '   <RetrieveRequest>',
-            '       <ObjectType>DataExtension</ObjectType>',
-            '       <Properties>ObjectID</Properties>',
-            '       <Properties>CustomerKey</Properties>',
-            '       <Properties>Name</Properties>',
-            '       <Properties>IsSendable</Properties>',
-            '       <Properties>SendableSubscriberField.Name</Properties>',
-            '       <Filter xsi:type="SimpleFilterPart">',
-            '       <Property>CustomerKey</Property>',
-            '       <SimpleOperator>equals</SimpleOperator>',
-            f'      <Value>{de_key}</Value>',
-            '       </Filter>',
-            '   </RetrieveRequest>',
-            '<RetrieveRequestMsg>'
+            '    <RetrieveRequest>',
+            '        <ObjectType>DataExtension</ObjectType>',
+            '        <Properties>ObjectID</Properties>',
+            '        <Properties>CustomerKey</Properties>',
+            '        <Properties>Name</Properties>',
+            '        <Properties>IsSendable</Properties>',
+            '        <Properties>SendableSubscriberField.Name</Properties>',
+            '        <Filter xsi:type="SimpleFilterPart">',
+            '            <Property>CustomerKey</Property>',
+            '            <SimpleOperator>equals</SimpleOperator>',
+            f'           <Value>{de_key}</Value>',
+            '        </Filter>',
+            '    </RetrieveRequest>',
+            '</RetrieveRequestMsg>'
         ])
         response_xml = self.client.make_soap_request("Retrieve", body)
-        results = response_xml.find(".//s:Body/default:RetrieveResponseMsg/default:Results", namespace=self.soap_xml_namespaces)
+        results = response_xml.find(".//s:Body/default:RetrieveResponseMsg/default:Results", namespaces=self.soap_xml_namespaces)
         
         if results is None:
             return None
